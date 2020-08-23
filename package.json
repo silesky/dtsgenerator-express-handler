@@ -13,8 +13,8 @@
     "compile": "tsc -p .",
     "watch": "npm run compile -- -w",
     "build": "npm run compile",
-    "do-test": "cross-env TS_NODE_FILES=true mocha --exit --require ts-node/register --colors test/*_test.ts",
-    "test": "nyc npm run do-test",
+    "do-test": "cross-env TS_NODE_FILES=true mocha --exit --require ts-node/register --inspect --colors test/*_test.ts",
+    "test": "npm run do-test",
     "coverage": "nyc report --reporter=text-lcov | coveralls",
     "test:update-snapshot": "UPDATE_SNAPSHOT=1 npm run do-test"
   },

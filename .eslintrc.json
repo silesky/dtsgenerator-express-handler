@@ -12,7 +12,7 @@
   "env": {
     "node": true,
     "es2020": true,
-    "mocha": true
+    "jest": true
   },
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
@@ -21,7 +21,10 @@
   },
   "rules": {
     "@typescript-eslint/no-unused-vars": [
-      "error", { "argsIgnorePattern": "^_" }
+      "error",
+      {
+        "argsIgnorePattern": "^_"
+      }
     ],
     "@typescript-eslint/no-use-before-define": "off"
   }

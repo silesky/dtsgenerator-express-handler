@@ -3,6 +3,7 @@ import {
     Response,
     Request,
     Query,
+    ParamsArray,
 } from 'express-serve-static-core';
 
 declare module 'express-serve-static-core' {
@@ -15,26 +16,23 @@ declare module 'express-serve-static-core' {
     }
 }
 
-interface RequestHandlerRequest<
-    P extends Record<string, any>,
-    ResponseBody,
-    RequestBody,
-    QueryParams extends Query
-> extends Request<P, ResponseBody, RequestBody> {
-    query: QueryParams;
-}
+// prevents mismatch from dtsgen, and also computes type
+type Compute<T> = {
+    [K in keyof T]: T[K];
+    // eslint-disable-next-line @typescript-eslint/ban-types
+} & {};
 
 export type RequestHandler<
-    Params = any,
+    Params extends Record<string, any> = any,
     ResponseBody = any,
     RequestBody = any,
-    QueryParams extends Query = any
+    QueryParams extends Record<string, any> = any
 > = (
-    request: RequestHandlerRequest<
-        Params,
+    request: Request<
+        Compute<Params>,
         ResponseBody,
         RequestBody,
-        QueryParams
+        Compute<QueryParams>
     >,
     response: Response<ResponseBody>,
     next: NextFunction

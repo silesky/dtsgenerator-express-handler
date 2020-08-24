@@ -15,6 +15,7 @@
     "build": "npm run compile",
     "do-test": "jest --forceExit",
     "test": "jest --forceExit",
+    "run-app": "ts-node src/lib",
     "test:watch": "npm run test -- --watch",
     "test:update-snapshot": "UPDATE_SNAPSHOT=1 npm run do-test"
   },
@@ -35,6 +36,7 @@
   "devDependencies": {
     "@types/jest": "^26.0.10",
     "@types/node": "^14.0.23",
+    "@types/ramda": "^0.27.14",
     "@typescript-eslint/eslint-plugin": "^3.6.1",
     "@typescript-eslint/parser": "^3.6.1",
     "cross-env": "^7.0.2",
@@ -49,6 +51,7 @@
     "typescript": "^3.9.7"
   },
   "dependencies": {
+    "ramda": "^0.27.1",
     "tslib": "^2.0.0"
   }
 }

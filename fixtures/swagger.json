@@ -1,0 +1,287 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "version": "1.0.0",
+    "title": "Node Skeleton Servie",
+    "description": "My Description"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080"
+    }
+  ],
+  "paths": {
+    "/v1/hello": {
+      "get": {
+        "description": "Get greeting.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "name",
+            "required": true,
+            "description": "the name of the person who is being greeted.",
+            "example": "jonathan",
+            "schema": {
+              "type": "string",
+              "maxLength": 12
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/GetHelloV1"
+          }
+        }
+      }
+    },
+    "/v2/hello": {
+      "get": {
+        "description": "Get greeting.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "foo",
+            "required": false,
+            "description": "a boolean",
+            "example": true,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully returned a greeting.",
+            "content": {
+              "application/text": {
+                "schema": {
+                  "type": "string",
+                  "example": "Sup!"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/todo": {
+      "get": {
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/GetTodoList"
+          }
+        }
+      },
+      "post": {
+        "requestBody": {
+          "$ref": "#/components/requestBodies/CreateTodo"
+        },
+        "responses": {
+          "201": {
+            "$ref": "#/components/responses/CreateTodo"
+          }
+        }
+      }
+    },
+    "/v1/todo/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "description": "todo ID",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/GetTodo"
+          },
+          "400": {
+            "$ref": "#/components/responses/OpenApiValidationError"
+          },
+          "404": {
+            "$ref": "#/components/responses/GenericError"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "requestBodies": {
+      "CreateTodo": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Todo"
+            }
+          }
+        },
+        "required": true
+      }
+    },
+    "responses": {
+      "GetHelloV1": {
+        "description": "Successfully returned a greeting.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "greeting": {
+                  "type": "string",
+                  "example": "Hello, jonathan"
+                }
+              }
+            }
+          }
+        }
+      },
+      "GetTodo": {
+        "description": "Successfully returned a todo",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Todo"
+            }
+          }
+        }
+      },
+      "CreateTodo": {
+        "description": "Successfully created a Todo",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "number",
+                  "example": "abcdef1234565789"
+                }
+              }
+            }
+          }
+        }
+      },
+      "GetTodoList": {
+        "description": "Successfully returned a list of todos",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "todos": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Todo"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "GenericError": {
+        "description": "generic error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/GenericError"
+            }
+          }
+        }
+      },
+      "OpenApiValidationError": {
+        "description": "default open api 400 error. Triggered on bad request.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "message",
+                "errors"
+              ],
+              "properties": {
+                "message": {
+                  "type": "string"
+                },
+                "errors": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "path",
+                      "message",
+                      "errorCode"
+                    ],
+                    "properties": {
+                      "path": {
+                        "example": ".body.schedule.monday.close",
+                        "type": "string"
+                      },
+                      "message": {
+                        "example": "request.body.schedule.monday should have required property 'close'",
+                        "type": "string"
+                      },
+                      "errorCode": {
+                        "example": "required.openapi.validation",
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "GenericError": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "example": 404,
+            "type": "number"
+          },
+          "message": {
+            "example": "Todo not found",
+            "type": "string"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "Todo": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "description": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "Shopping",
+              "Home",
+              "Work"
+            ]
+          }
+        },
+        "required": [
+          "description",
+          "category"
+        ]
+      }
+    }
+  }
+}

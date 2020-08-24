@@ -51,6 +51,7 @@
     "typescript": "^3.9.7"
   },
   "dependencies": {
+    "@types/express-serve-static-core": "^4.17.9",
     "ramda": "^0.27.1",
     "tslib": "^2.0.0"
   }

@@ -15,7 +15,7 @@
     "build": "npm run compile",
     "do-test": "jest --forceExit",
     "test": "jest --forceExit",
-    "run-app": "ts-node src/lib",
+    "codegen": "ts-node src/lib",
     "test:watch": "npm run test -- --watch",
     "test:update-snapshot": "UPDATE_SNAPSHOT=1 npm run do-test"
   },

@@ -1,7 +1,7 @@
-import ts, { Node, ModuleDeclaration } from 'typescript';
+import ts from 'typescript';
 import fs from 'fs';
 import path from 'path';
-import R from 'ramda';
+// import R from 'ramda';
 // hardcode our input file
 
 // create a program instance, which is a collection of source files
@@ -10,7 +10,8 @@ const filePath = 'fixtures/todo-openapi.d.ts';
 const program = ts.createProgram([filePath], {});
 
 // pull off the typechecker instance from our program
-const checker = program.getTypeChecker();
+
+program.getTypeChecker();
 
 const source = program.getSourceFile(filePath);
 if (!source) {
@@ -61,7 +62,7 @@ const transformer: ts.TransformerFactory<ts.SourceFile> = (context) => {
                                             ) {
                                                 console.log(methodDeclaration);
                                                 const typeName = `${pathNameStr}${methodDeclaration.name.getText()}`;
-                                                // V1HelloGet
+
                                                 console.log(typeName);
                                                 // console.log(name);
                                             }

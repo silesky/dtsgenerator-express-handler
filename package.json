@@ -15,7 +15,7 @@
     "build": "npm run compile",
     "do-test": "jest --forceExit",
     "test": "jest --forceExit",
-    "codegen": "ts-node src/lib",
+    "codegen": "DEBUG=lib ts-node src/lib",
     "test:watch": "npm run test -- --watch",
     "dtsgen": "DEBUG=dtsgen dtsgen -c dtsgen.json fixtures/swagger.json -o",
     "test:update-snapshot": "UPDATE_SNAPSHOT=1 npm run do-test"
@@ -36,6 +36,7 @@
   "homepage": "https://github.com/silesky/dtsgenerator-express-handler#readme",
   "devDependencies": {
     "@dtsgenerator/replace-namespace": "^1.3.2",
+    "@types/debug": "^4.1.5",
     "@types/jest": "^26.0.10",
     "@types/node": "^14.0.23",
     "@types/ramda": "^0.27.14",
@@ -54,6 +55,7 @@
   },
   "dependencies": {
     "@types/express-serve-static-core": "^4.17.9",
+    "debug": "^4.1.1",
     "ramda": "^0.27.1",
     "tslib": "^2.0.0"
   }

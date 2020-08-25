@@ -91,27 +91,43 @@ const isNamespace = (v: ts.Node): v is ModuleDeclaration => {
   }
   return false;
 };
+
+// ar deepFind = (obj, type) => {
+//     let v
+//     function deepFindHelper(obj, type, value) {
+//       if (v) return v
+//       const keys = Object.keys(obj);
+//       keys.forEach((k) => {
+//         if (!v && typeof obj[k] === type) {
+//           v = obj[k]
+//           return
+//         }
+//         return deepFindHelper(obj[k], type);
+//       });
+//       return v
+//     }
+//     return deepFindHelper(obj, type)
+// };
+
 const getPathParametersPath = (
   node: ts.Node,
-  path: string[] = [],
-  foundNode?: ts.Node
-) => {
-  if (!node.getChildCount()) return null;
-  if (foundNode) return foundNode;
-  ts.forEachChild(node, (v) => {
-    if (isPathParameter(v)) {
-      const newPath = [...path, 'PathParameters'];
-      console.log(newPath);
-      foundNode = v;
-    } else if (isNamespace(v)) {
-      console.log(v);
-      const currentPath = v.name.getText();
-      return getPathParametersPath(v, [...path, currentPath]);
-    } else {
-      return getPathParametersPath(v, [...path]);
-    }
-  });
-  return foundNode;
+  path: string[] = []
+): string | undefined => {
+  let newPath: string[] = [];
+  function _getPathParametersPathHelper(node: ts.Node, path: string[]) {
+    node.forEachChild((v) => {
+      if (isPathParameter(v)) {
+        newPath = [...path, 'PathParameters'];
+        return;
+      } else if (isNamespace(v)) {
+        const currentPath = v.name.getText();
+        return _getPathParametersPathHelper(v, [...path, currentPath]);
+      }
+      return _getPathParametersPathHelper(v, [...path]);
+    });
+    return newPath.join('.'); // return an object literal does not work ...
+  }
+  return _getPathParametersPathHelper(node, path);
 };
 
 // const  createGeneric = (name: string, type: ts.TypeNode, sourceFile: ts.SourceFile) {
@@ -201,8 +217,6 @@ const transformer: ts.TransformerFactory<ts.SourceFile> = (context) => {
   const visit: ts.Visitor = (node) => {
     node = ts.visitEachChild(node, visit, context);
     if (ts.isModuleDeclaration(node) && node.name.getText().includes('Paths')) {
-      const result = getPathParametersPath(node);
-      console.log(result);
       // all paths, create new type (e.g. v1HelloGet)
       ts.forEachChild(node, (v) => {
         if (ts.isModuleBlock(v)) {
@@ -217,8 +231,9 @@ const transformer: ts.TransformerFactory<ts.SourceFile> = (context) => {
                     if (ts.isModuleDeclaration(methodDeclaration)) {
                       const methodName = methodDeclaration.name.getText();
                       const httpMethod = createValidMethod(methodName);
-                      const typeName = `${pathNameStr}${httpMethod}`;
+                      const result = getPathParametersPath(node);
                       console.log(result);
+                      const typeName = `${pathNameStr}${httpMethod}`;
                       //   const t = getGenericTypesFromPathNode(pathNameStr, node);
                       //   print(t)
                     }
@@ -280,13 +295,13 @@ const transformer: ts.TransformerFactory<ts.SourceFile> = (context) => {
 const result = ts.transform(source, [transformer]);
 // console.log(result);
 // Create our output folder
-const outputDir = path.resolve(__dirname, '../generated');
-if (!fs.existsSync(outputDir)) {
-  fs.mkdirSync(outputDir);
-}
+// const outputDir = path.resolve(__dirname, '../generated');
+// if (!fs.existsSync(outputDir)) {
+//   fs.mkdirSync(outputDir);
+// }
 
-// Write pretty printed transformed typescript to output directory
-fs.writeFileSync(
-  path.resolve(__dirname, '../generated/models.ts'),
-  printer.printFile(result.transformed[0])
-);
+// // Write pretty printed transformed typescript to output directory
+// fs.writeFileSync(
+//   path.resolve(__dirname, '../generated/models.ts'),
+//   printer.printFile(result.transformed[0])
+// );

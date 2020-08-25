@@ -75,20 +75,22 @@ const isSpecifiedInterfaceOrType = (
 ): boolean => {
   if (
     ts.isInterfaceDeclaration(v) ||
-    (ts.isTypeAliasDeclaration(v) &&
-      new RegExp(declarationName, 'i').test(declarationName))
+    (ts.isTypeAliasDeclaration(v) && v.getText() === declarationName)
   ) {
     return true;
   }
   return false;
 };
 
+const PATH_PARAMETERS = 'PathParameters';
+const NAMESPACE = 'namespace';
+
 const isPathParameter = (v: ts.Node): boolean => {
-  return isSpecifiedInterfaceOrType(v, 'PathParameter');
+  return isSpecifiedInterfaceOrType(v, PATH_PARAMETERS);
 };
 
 const isNamespace = (v: ts.Node): v is ModuleDeclaration => {
-  if (ts.isModuleDeclaration(v) && v.getText().includes('namespace')) {
+  if (ts.isModuleDeclaration(v) && v.getText().includes(NAMESPACE)) {
     return true;
   }
   return false;
@@ -116,7 +118,7 @@ const getPathParametersPath = (node: ts.Node): string | undefined => {
   function _getPathParametersPathHelper(node: ts.Node, path: string[]) {
     node.forEachChild((v) => {
       if (isPathParameter(v)) {
-        newPath = [...path, 'PathParameters'];
+        newPath = [...path, PATH_PARAMETERS];
         return;
       } else if (isNamespace(v)) {
         const currentPath = v.name.getText();
@@ -126,7 +128,7 @@ const getPathParametersPath = (node: ts.Node): string | undefined => {
     });
     return newPath.join('.'); // return an object literal does not work ...
   }
-  return _getPathParametersPathHelper(node, path);
+  return _getPathParametersPathHelper(node, []);
 };
 
 /**
@@ -150,7 +152,7 @@ const getQueryParametersPath = (node: ts.Node[]): string => {
 /**
  *
  * @param node
- * @returns  Paths.V1Todo.Post.RequestBody
+ * @returns  Paths.V1Hello.Get.QueryParameters
  */
 const getRequestBodyPath = (node: ts.Node[]): string => {
   return '';

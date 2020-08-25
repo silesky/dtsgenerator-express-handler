@@ -2,17 +2,11 @@ import ts, {
   TypeAliasDeclaration,
   InterfaceDeclaration,
   ModuleDeclaration,
-  TypeParameterDeclaration,
-  isModuleDeclaration,
-  isModuleBlock,
-  createTypeLiteralNode,
   isTypeAliasDeclaration,
 } from 'typescript';
 import fs from 'fs';
 import path from 'path';
 import debug from 'debug';
-import { insert } from 'ramda';
-const logLib = debug('lib');
 // import R from 'ramda';
 // hardcode our input file
 
@@ -75,14 +69,22 @@ const getChildDeclarations = (
   return declarations;
 };
 
-type Item = { node: ts.Node; path: string[] };
-// nodeKind: 'InterfaceDeclaration',
-// text: 'export interface PathParameters {\n        id: Parameters.Id;\n      }' },
-const isPathParameter = (v: ts.Node): boolean => {
-  if (ts.isInterfaceDeclaration(v) && v.getText().includes('Path')) {
+const isSpecifiedInterfaceOrType = (
+  v: ts.Node,
+  declarationName: string
+): boolean => {
+  if (
+    ts.isInterfaceDeclaration(v) ||
+    (ts.isTypeAliasDeclaration(v) &&
+      new RegExp(declarationName, 'i').test(declarationName))
+  ) {
     return true;
   }
   return false;
+};
+
+const isPathParameter = (v: ts.Node): boolean => {
+  return isSpecifiedInterfaceOrType(v, 'PathParameter');
 };
 
 const isNamespace = (v: ts.Node): v is ModuleDeclaration => {
@@ -109,10 +111,7 @@ const isNamespace = (v: ts.Node): v is ModuleDeclaration => {
 //     return deepFindHelper(obj, type)
 // };
 
-const getPathParametersPath = (
-  node: ts.Node,
-  path: string[] = []
-): string | undefined => {
+const getPathParametersPath = (node: ts.Node): string | undefined => {
   let newPath: string[] = [];
   function _getPathParametersPathHelper(node: ts.Node, path: string[]) {
     node.forEachChild((v) => {
@@ -128,6 +127,33 @@ const getPathParametersPath = (
     return newPath.join('.'); // return an object literal does not work ...
   }
   return _getPathParametersPathHelper(node, path);
+};
+
+/**
+ *
+ * @param node
+ * @returns   Paths.V1Hello.Get.Responses.$200 | Paths.V1Hello.Get.Responses.$404,
+ */
+const getResponsesPathUnion = (node: ts.Node[]): string => {
+  return '';
+};
+
+/**
+ *
+ * @param node
+ * @returns  Paths.V1Hello.Get.QueryParameters
+ */
+const getQueryParametersPath = (node: ts.Node[]): string => {
+  return '';
+};
+
+/**
+ *
+ * @param node
+ * @returns  Paths.V1Todo.Post.RequestBody
+ */
+const getRequestBodyPath = (node: ts.Node[]): string => {
+  return '';
 };
 
 // const  createGeneric = (name: string, type: ts.TypeNode, sourceFile: ts.SourceFile) {
@@ -209,8 +235,7 @@ const createRequestHandler = (
   return `export type ${name} = RequestHandler<${params}, ${responseBody}, ${requestBody}, ${queryParams}>`;
 };
 const getGenericTypesFromPathNode = (pathNameStr: string, node: ts.Node) => {
-  const declarations = getChildDeclarations(node);
-  logChildren(declarations);
+  return createRequestHandler(pathNameStr, getPathParametersPath(node));
 };
 
 const transformer: ts.TransformerFactory<ts.SourceFile> = (context) => {
@@ -231,10 +256,10 @@ const transformer: ts.TransformerFactory<ts.SourceFile> = (context) => {
                     if (ts.isModuleDeclaration(methodDeclaration)) {
                       const methodName = methodDeclaration.name.getText();
                       const httpMethod = createValidMethod(methodName);
-                      const result = getPathParametersPath(node);
                       console.log(result);
                       const typeName = `${pathNameStr}${httpMethod}`;
-                      //   const t = getGenericTypesFromPathNode(pathNameStr, node);
+                      const t = getGenericTypesFromPathNode(typeName, node);
+                      console.log(t);
                       //   print(t)
                     }
                   });

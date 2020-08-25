@@ -1,6 +1,8 @@
 import { RequestHandler } from './types';
 import { Paths } from '../fixtures/todo-openapi';
 
+const methods = ['get', 'post', 'put', 'patch'];
+
 type Method = {
     Parameters: Record<string, any>;
     PathParameters: Record<string, any>;

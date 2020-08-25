@@ -11,95 +11,84 @@ const program = ts.createProgram([filePath], {});
 
 // pull off the typechecker instance from our program
 
+const methods = ['Get', 'Post', 'Put', 'Patch', 'Delete'] as const;
+type Method = typeof methods[number];
+
+function assertHTTPMethod(val: string): asserts val is Method {
+  if (!methods.includes(val as Method)) {
+    throw Error('invalid http method');
+  }
+}
+
+const createValidMethod = (val: string): Method => {
+  assertHTTPMethod(val);
+  return val;
+};
+
 program.getTypeChecker();
 
 const source = program.getSourceFile(filePath);
 if (!source) {
-    throw Error('no source file.');
+  throw Error('no source file.');
 }
 const printer = ts.createPrinter();
 
 const transformer: ts.TransformerFactory<ts.SourceFile> = (context) => {
-    const visit: ts.Visitor = (node) => {
-        node = ts.visitEachChild(node, visit, context);
-        if (
-            ts.isModuleDeclaration(node) &&
-            node.name.getText().includes('Paths')
-        ) {
-            // all paths, create new type (e.g. v1HelloGet)
-            ts.forEachChild(node, (v) => {
-                if (ts.isModuleBlock(v)) {
-                    // escapedName: 'Paths',
-                    ts.forEachChild(v, (pathName) => {
-                        if (ts.isModuleDeclaration(pathName)) {
-                            // V1Hello, V1Todo, V1Todo$id, V2Hello
-                            ts.forEachChild(pathName, (pathNameBlock) => {
-                                if (ts.isModuleBlock(pathNameBlock)) {
-                                    /**
-                                   * { 
-                                      export namespace Get { 
-                                          export namespace Parameters { 
-                                              export type Name = string; 
-                                          } 
-                                          export interface QueryParameters { 
-                                              name: Parameters.Name; 
-                                          } 
-                                          export namespace Responses { 
-                                              export type $200 = Components.Responses.GetHelloV1; 
-                                          } 
-                                      } 
-                                  }
-                                   */
+  const visit: ts.Visitor = (node) => {
+    node = ts.visitEachChild(node, visit, context);
+    if (ts.isModuleDeclaration(node) && node.name.getText().includes('Paths')) {
+      // all paths, create new type (e.g. v1HelloGet)
+      ts.forEachChild(node, (v) => {
+        if (ts.isModuleBlock(v)) {
+          // escapedName: 'Paths',
+          ts.forEachChild(v, (pathName) => {
+            if (ts.isModuleDeclaration(pathName)) {
+              // V1Hello, V1Todo, V1Todo$id, V2Hello
+              ts.forEachChild(pathName, (pathNameBlock) => {
+                if (ts.isModuleBlock(pathNameBlock)) {
+                  ts.forEachChild(pathNameBlock, (methodDeclaration) => {
+                    const pathNameStr = pathName.name.getText();
+                    if (ts.isModuleDeclaration(methodDeclaration)) {
+                      const methodName = methodDeclaration.name.getText();
+                      const httpMethod = createValidMethod(methodName);
+                      const typeName = `${pathNameStr}${httpMethod}`;
 
-                                    ts.forEachChild(
-                                        pathNameBlock,
-                                        (methodDeclaration) => {
-                                            const pathNameStr = pathName.name.getText();
-                                            if (
-                                                ts.isModuleDeclaration(
-                                                    methodDeclaration
-                                                )
-                                            ) {
-                                                console.log(methodDeclaration);
-                                                const typeName = `${pathNameStr}${methodDeclaration.name.getText()}`;
-
-                                                console.log(typeName);
-                                                // console.log(name);
-                                            }
-                                        }
-                                    );
-                                }
-                            });
-                            //  escapedName: 'V1Hello',
-                            // console.log(a)dd;
-                        }
-                        // if (ts.isNamespaceExport(a)) {
-                        //     console.log(v);
-                        //     const symbol = checker.getSymbolAtLocation(v);
-                        //     if (!symbol) return;
-                        //     console.log(symbol);
-                        // }
-                    });
+                      console.log(typeName);
+                      // console.log(name);
+                    }
+                  });
                 }
-                // console.log(v.getChildren());
-            });
+              });
+              //  escapedName: 'V1Hello',
+              // console.log(a)dd;
+            }
+            // if (ts.isNamespaceExport(a)) {
+            //     console.log(v);
+            //     const symbol = checker.getSymbolAtLocation(v);
+            //     if (!symbol) return;
+            //     console.log(symbol);
+            // }
+          });
         }
-        // if (ts.isTypeReferenceNode(node)) {
-        //     const symbol = checker.getSymbolAtLocation(node.typeName);
-        //     if (!symbol) return;
-        //     const type = checker.getDeclaredTypeOfSymbol(symbol);
-        //     const declarations = R.chain((property) => {
-        //         return R.map(visit, property.declarations);
-        //     }, checker.getPropertiesOfType(type));
-        //     if (declarations.length) {
-        //         console.log(declarations);
-        //     }
-        //     // return ts.createTypeLiteralNode(
-        //     //     declarations.filter(ts.isTypeElement)
-        //     // );
-        // }
+        // console.log(v.getChildren());
+      });
+    }
+    // if (ts.isTypeReferenceNode(node)) {
+    //     const symbol = checker.getSymbolAtLocation(node.typeName);
+    //     if (!symbol) return;
+    //     const type = checker.getDeclaredTypeOfSymbol(symbol);
+    //     const declarations = R.chain((property) => {
+    //         return R.map(visit, property.declarations);
+    //     }, checker.getPropertiesOfType(type));
+    //     if (declarations.length) {
+    //         console.log(declarations);
+    //     }
+    //     // return ts.createTypeLiteralNode(
+    //     //     declarations.filter(ts.isTypeElement)
+    //     // );
+    // }
 
-        /*
+    /*
       Convert type alias to interface declaration
         interface IUser {
           username: string
@@ -115,10 +104,10 @@ const transformer: ts.TransformerFactory<ts.SourceFile> = (context) => {
         }
 
     */
-        return node;
-    };
+    return node;
+  };
 
-    return (node) => ts.visitNode(node, visit);
+  return (node) => ts.visitNode(node, visit);
 };
 
 // Run source file through our transformer
@@ -127,11 +116,11 @@ const result = ts.transform(source, [transformer]);
 // Create our output folder
 const outputDir = path.resolve(__dirname, '../generated');
 if (!fs.existsSync(outputDir)) {
-    fs.mkdirSync(outputDir);
+  fs.mkdirSync(outputDir);
 }
 
 // Write pretty printed transformed typescript to output directory
 fs.writeFileSync(
-    path.resolve(__dirname, '../generated/models.ts'),
-    printer.printFile(result.transformed[0])
+  path.resolve(__dirname, '../generated/models.ts'),
+  printer.printFile(result.transformed[0])
 );

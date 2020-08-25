@@ -65,6 +65,19 @@ export namespace Components {
   }
 }
 export namespace Paths {
+  export namespace V1Todo {
+    export namespace Get {
+      export namespace Responses {
+        export type $200 = Components.Responses.GetTodoList;
+      }
+    }
+    export namespace Post {
+      export type RequestBody = Components.RequestBodies.CreateTodo;
+      export namespace Responses {
+        export type $201 = Components.Responses.CreateTodo;
+      }
+    }
+  }
   export namespace V1Todo$Id {
     export namespace Get {
       export namespace Parameters {
@@ -77,6 +90,16 @@ export namespace Paths {
         export type $200 = Components.Responses.GetTodo;
         export type $400 = Components.Responses.OpenApiValidationError;
         export type $404 = Components.Responses.GenericError;
+      }
+    }
+  }
+  export namespace V2Hello {
+    export namespace Get {
+      export namespace Parameters {
+        export type Foo = boolean;
+      }
+      export interface QueryParameters {
+        foo?: Parameters.Foo;
       }
     }
   }

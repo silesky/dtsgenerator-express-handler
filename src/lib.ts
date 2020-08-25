@@ -3,6 +3,7 @@ import ts, {
   InterfaceDeclaration,
   ModuleDeclaration,
   isTypeAliasDeclaration,
+  isModuleBlock,
 } from 'typescript';
 import fs from 'fs';
 import path from 'path';
@@ -69,24 +70,11 @@ const getChildDeclarations = (
   return declarations;
 };
 
-const isSpecifiedInterfaceOrType = (
-  v: ts.Node,
-  declarationName: string
-): boolean => {
-  if (
-    ts.isInterfaceDeclaration(v) ||
-    (ts.isTypeAliasDeclaration(v) && v.getText() === declarationName)
-  ) {
-    return true;
-  }
-  return false;
-};
-
 const PATH_PARAMETERS = 'PathParameters';
 const NAMESPACE = 'namespace';
 
 const isPathParameter = (v: ts.Node): boolean => {
-  return isSpecifiedInterfaceOrType(v, PATH_PARAMETERS);
+  return v.getText() === PATH_PARAMETERS;
 };
 
 const isNamespace = (v: ts.Node): v is ModuleDeclaration => {
@@ -96,29 +84,12 @@ const isNamespace = (v: ts.Node): v is ModuleDeclaration => {
   return false;
 };
 
-// ar deepFind = (obj, type) => {
-//     let v
-//     function deepFindHelper(obj, type, value) {
-//       if (v) return v
-//       const keys = Object.keys(obj);
-//       keys.forEach((k) => {
-//         if (!v && typeof obj[k] === type) {
-//           v = obj[k]
-//           return
-//         }
-//         return deepFindHelper(obj[k], type);
-//       });
-//       return v
-//     }
-//     return deepFindHelper(obj, type)
-// };
-
 const getPathParametersPath = (node: ts.Node): string | undefined => {
   let newPath: string[] = [];
   function _getPathParametersPathHelper(node: ts.Node, path: string[]) {
     node.forEachChild((v) => {
       if (isPathParameter(v)) {
-        newPath = [...path, PATH_PARAMETERS];
+        newPath = ['Path', ...path, PATH_PARAMETERS];
         return;
       } else if (isNamespace(v)) {
         const currentPath = v.name.getText();
@@ -131,6 +102,21 @@ const getPathParametersPath = (node: ts.Node): string | undefined => {
   return _getPathParametersPathHelper(node, []);
 };
 
+const isMethodNamespaceNode = (node: ts.Node): node is ModuleDeclaration => {
+  const isMethod = methods.some(
+    (m) => isNamespace(node) && node.name.getText() === m
+  );
+  return isMethod;
+};
+
+const appendNamespaceToParent = (
+  node: ts.ModuleDeclaration
+): string | undefined => {
+  if (isNamespace(node.parent.parent)) {
+    return `${node.parent.parent.name.getText()}${node.name.getText()}`;
+  }
+  return undefined;
+};
 /**
  *
  * @param node
@@ -242,80 +228,30 @@ const getGenericTypesFromPathNode = (pathNameStr: string, node: ts.Node) => {
 
 /**
  *
- * @param context if namespace is Get or Post of Delete or Whatever, search parents recursively
+ * @param context if namespace is Get or Post of Delete or Whatever, search parents recursivelt
  */
 const transformer: ts.TransformerFactory<ts.SourceFile> = (context) => {
+  let name: string | undefined = '';
   const visit: ts.Visitor = (node) => {
     node = ts.visitEachChild(node, visit, context);
-    if (ts.isModuleDeclaration(node) && node.name.getText().includes('Paths')) {
-      // all paths, create new type (e.g. v1HelloGet)
-      ts.forEachChild(node, (v) => {
-        if (ts.isModuleBlock(v)) {
-          // escapedName: 'Paths',
-          ts.forEachChild(v, (pathName) => {
-            if (ts.isModuleDeclaration(pathName)) {
-              // V1Hello, V1Todo, V1Todo$id, V2Hello
-              ts.forEachChild(pathName, (pathNameBlock) => {
-                if (ts.isModuleBlock(pathNameBlock)) {
-                  ts.forEachChild(pathNameBlock, (methodDeclaration) => {
-                    const pathNameStr = pathName.name.getText();
-                    if (ts.isModuleDeclaration(methodDeclaration)) {
-                      const methodName = methodDeclaration.name.getText();
-                      const httpMethod = createValidMethod(methodName);
-                      console.log(result);
-                      const typeName = `${pathNameStr}${httpMethod}`;
-                      const t = getGenericTypesFromPathNode(typeName, node);
-                      console.log(t);
-                      //   print(t)
-                    }
-                  });
-                }
-              });
-              //  escapedName: 'V1Hello',
-              // console.log(a)dd;
-            }
-            // if (ts.isNamespaceExport(a)) {
-            //     console.log(v);
-            //     const symbol = checker.getSymbolAtLocation(v);
-            //     if (!symbol) return;
-            //     console.log(symbol);
-            // }
-          });
-        }
-        // console.log(v.getChildren());
-      });
+    if (isMethodNamespaceNode(node)) {
+      name = appendNamespaceToParent(node);
+      console.log(name);
     }
-    // if (ts.isTypeReferenceNode(node)) {
-    //     const symbol = checker.getSymbolAtLocation(node.typeName);
-    //     if (!symbol) return;
-    //     const type = checker.getDeclaredTypeOfSymbol(symbol);
-    //     const declarations = R.chain((property) => {
-    //         return R.map(visit, property.declarations);
-    //     }, checker.getPropertiesOfType(type));
-    //     if (declarations.length) {
-    //         console.log(declarations);
-    //     }
-    //     // return ts.createTypeLiteralNode(
-    //     //     declarations.filter(ts.isTypeElement)
-    //     // );
-    // }
+    if (
+      node.parent &&
+      ts.isModuleDeclaration(node.parent) &&
+      node.parent.name.getText() === 'Paths' &&
+      isModuleBlock(node)
+    ) {
+      // console.log(node.getText());
+      // const methodName = methodDeclaration.name.getText();
+      // const httpMethod = createValidMethod(methodName);
+      if (!name) return node;
+      const t = getGenericTypesFromPathNode(name, node);
+      console.log(t);
+    }
 
-    /*
-      Convert type alias to interface declaration
-        interface IUser {
-          username: string
-        }
-        type User = IUser
-
-      We want to remove all type aliases
-        interface IUser {
-          username: string
-        }
-        interface User {
-          username: string  <-- Also need to resolve IUser
-        }
-
-    */
     return node;
   };
 

@@ -240,6 +240,10 @@ const getGenericTypesFromPathNode = (pathNameStr: string, node: ts.Node) => {
   return createRequestHandler(pathNameStr, getPathParametersPath(node));
 };
 
+/**
+ *
+ * @param context if namespace is Get or Post of Delete or Whatever, search parents recursively
+ */
 const transformer: ts.TransformerFactory<ts.SourceFile> = (context) => {
   const visit: ts.Visitor = (node) => {
     node = ts.visitEachChild(node, visit, context);
